@@ -1,0 +1,14 @@
+board: app
+version-source: VERSION
+hardware-project: hardware/boards/app
+firmware-target: firmware/boards/app
+software-tools:
+  - software/tools
+interfaces:
+  power:
+    description: Placeholder system power and rail definitions for the app board.
+  debug:
+    description: Placeholder bring-up and manufacturing hooks for firmware and host tooling.
+artifacts:
+  build-dir: hardware/boards/app/build
+  manufacturing-dir: hardware/boards/app/manufacturing

@@ -1,0 +1,9 @@
+requires-atopile: "^0.15.3"
+
+paths:
+  src: ./src
+  layout: ./layouts
+
+builds:
+  default:
+    entry: src/main.ato:App

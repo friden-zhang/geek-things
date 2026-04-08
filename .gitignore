@@ -8,6 +8,15 @@ fp*cache
 # Dependencies
 .ato/
 
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Worktrees
+.worktrees/
+worktrees/
+
 # IDE
 .vscode/
 .idea/
