@@ -1,4 +1,0 @@
-"""app - Initial board entrypoint"""
-
-module App:
-    pass

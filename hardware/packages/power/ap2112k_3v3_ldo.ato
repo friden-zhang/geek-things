@@ -1,0 +1,39 @@
+import Capacitor
+import ElectricPower
+
+from "parts/DIODES_AP2112K_3_3TRG1/DIODES_AP2112K_3_3TRG1.ato" import DIODES_AP2112K_3_3TRG1_package
+
+
+module Ap2112K3V3Ldo:
+    """
+    Concrete 3.3V LDO power stage based on DIODES AP2112K-3.3TRG1.
+
+    This keeps the regulator part choice and its local stability capacitors in
+    one reusable block for USB-powered 5V-to-3V3 boards.
+    """
+
+    power_in = new ElectricPower
+    power_out = new ElectricPower
+
+    regulator = new DIODES_AP2112K_3_3TRG1_package
+
+    input_cap = new Capacitor
+    input_cap.capacitance = 1uF +/- 20%
+    input_cap.package = "0603"
+
+    output_cap = new Capacitor
+    output_cap.capacitance = 1uF +/- 20%
+    output_cap.package = "0603"
+
+    assert power_in.voltage within 2.5V to 6V
+    assert power_out.voltage within 3.3V +/- 1.5%
+    assert power_out.max_current <= 600mA
+
+    regulator.GND ~ power_in.lv
+    regulator.GND ~ power_out.lv
+    regulator.VIN ~ power_in.hv
+    regulator.VOUT ~ power_out.hv
+    regulator.EN ~ power_in.hv
+
+    power_in.hv ~> input_cap ~> power_in.lv
+    power_out.hv ~> output_cap ~> power_out.lv

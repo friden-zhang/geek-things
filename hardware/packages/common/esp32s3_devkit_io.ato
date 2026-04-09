@@ -1,0 +1,48 @@
+#pragma experiment("BRIDGE_CONNECT")
+
+import ElectricLogic
+import ElectricPower
+import Resistor
+
+from "atopile/buttons/buttons.ato" import VerticalButton
+from "atopile/worldsemi-ws2812b/worldsemi-ws2812b.ato" import Worldsemi_WS2812B_2020
+
+
+module Esp32S3DevkitIo:
+    """
+    Human-interface cluster for ESP32-S3 development boards.
+
+    This package provides the classic BOOT/RESET controls, one user button for
+    application code, and a compact addressable RGB status LED.
+    """
+
+    power = new ElectricPower
+    assert power.voltage within 3V to 3.6V
+
+    boot_mode = new ElectricLogic
+    enable = new ElectricLogic
+    user_button = new ElectricLogic
+    status_rgb_data = new ElectricLogic
+
+    boot_switch = new VerticalButton
+    reset_switch = new VerticalButton
+    user_switch = new VerticalButton
+    user_pullup = new Resistor
+    rgb_led = new Worldsemi_WS2812B_2020
+
+    user_pullup.resistance = 10kohm +/- 5%
+    user_pullup.package = "0402"
+
+    boot_mode.reference ~ power
+    enable.reference ~ power
+    user_button.reference ~ power
+    status_rgb_data.reference ~ power
+
+    boot_mode.line ~> boot_switch ~> power.lv
+    enable.line ~> reset_switch ~> power.lv
+
+    power.hv ~> user_pullup ~> user_button.line
+    user_button.line ~> user_switch ~> power.lv
+
+    power ~ rgb_led.power
+    status_rgb_data ~ rgb_led.data_in

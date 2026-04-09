@@ -14,8 +14,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
+      - name: Install uv
+        run: python3 -m pip install uv
+      - name: Sync project environment
+        run: uv sync --locked --python 3.14
       - id: boards
-        run: echo "boards=$(python3 tools/ci/monorepo.py --json-boards)" >> "$GITHUB_OUTPUT"
+        run: echo "boards=$(uv run python tools/ci/monorepo.py --json-boards)" >> "$GITHUB_OUTPUT"
 
   repo-check:
     runs-on: ubuntu-latest
@@ -24,10 +28,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
+      - name: Install uv
+        run: python3 -m pip install uv
+      - name: Sync project environment
+        run: uv sync --locked --python 3.14
       - name: Run monorepo unit tests
-        run: python3 -m unittest discover -s tests -v
+        run: uv run python -m unittest discover -s tests -v
       - name: Validate monorepo shape
-        run: python3 tools/ci/monorepo.py --check
+        run: uv run python tools/ci/monorepo.py --check
 
   hardware-build:
     runs-on: ubuntu-latest
@@ -46,9 +54,7 @@ jobs:
           python-version: "3.14"
       - name: Install uv
         run: python3 -m pip install uv
-      - name: Install atopile
-        run: uv tool install --python 3.14 "atopile==0.15.3"
-      - name: Expose uv tool executables
-        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Sync project environment
+        run: uv sync --locked --python 3.14
       - name: Build hardware board
-        run: python3 tools/ci/monorepo.py --build-board "${{ matrix.board }}"
+        run: uv run python tools/ci/monorepo.py --build-board "${{ matrix.board }}"

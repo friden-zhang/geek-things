@@ -21,7 +21,7 @@
 ## Versioning
 
 - The repository root `VERSION` file is the single release source of truth.
-- Hardware artifacts should be labeled as `<version>-<board>`, for example `0.1.0-app`.
+- Hardware artifacts should be labeled as `<version>-<board>`, for example `0.1.0-esp32s3_devkit`.
 - Firmware images and host-side tools should publish against the same repository version window.
 
 ## Board Contracts

@@ -1,0 +1,22 @@
+requires-atopile: ^0.15.3
+
+paths:
+  src: ./src
+  layout: ./layouts
+
+builds:
+  default:
+    entry: src/main.ato:App
+dependencies:
+- type: registry
+  identifier: atopile/usb-connectors
+  release: 0.4.1
+- type: registry
+  identifier: atopile/buttons
+  release: 0.4.0
+- type: registry
+  identifier: atopile/espressif-esp32-s3
+  release: 0.3.0
+- type: registry
+  identifier: atopile/worldsemi-ws2812b
+  release: 0.4.0

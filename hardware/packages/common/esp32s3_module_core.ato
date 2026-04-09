@@ -1,0 +1,128 @@
+#pragma experiment("FOR_LOOP")
+
+import Capacitor
+import ElectricLogic
+import ElectricPower
+import I2C
+import Resistor
+import SPI
+import UART
+import USB2_0
+
+from "atopile/espressif-esp32-s3/parts/Espressif_Systems_ESP32_S3_WROOM_1_N16R8/Espressif_Systems_ESP32_S3_WROOM_1_N16R8.ato" import Espressif_Systems_ESP32_S3_WROOM_1_N16R8_package
+
+
+module Esp32S3ModuleCore:
+    """
+    Minimal ESP32-S3-WROOM-1 core for reusable development boards.
+
+    This keeps the MCU, 3V3 power input, USB data routing, EN/BOOT strapping,
+    and the default Arduino-style peripheral assignments together, while leaving
+    buttons, RGB LEDs, and board-level connectors to higher-level packages.
+    """
+
+    package = new Espressif_Systems_ESP32_S3_WROOM_1_N16R8_package
+
+    power = new ElectricPower
+    power.required = True
+    assert power.voltage within 3V to 3.6V
+
+    enable = new ElectricLogic
+    boot_mode = new ElectricLogic
+    io = new ElectricLogic[49]
+
+    usb = new USB2_0
+    i2c = new I2C
+    spi = new SPI
+    spi_cs = new ElectricLogic
+    uart0 = new UART
+
+    c_bulk = new Capacitor
+    c_bulk.capacitance = 10uF +/- 20%
+    c_bulk.package = "0805"
+
+    c_decoupling = new Capacitor
+    c_decoupling.capacitance = 100nF +/- 20%
+    c_decoupling.package = "0402"
+
+    boot_pullup = new Resistor
+    boot_pullup.resistance = 10kohm +/- 1%
+    boot_pullup.package = "0402"
+
+    r_en = new Resistor
+    r_en.resistance = 10kohm +/- 5%
+    r_en.package = "0402"
+
+    c_en = new Capacitor
+    c_en.capacitance = 1uF +/- 20%
+    c_en.package = "0402"
+
+    package.P3V3 ~ power.hv
+    package.GND ~ power.lv
+
+    power.hv ~> c_bulk ~> power.lv
+    power.hv ~> c_decoupling ~> power.lv
+
+    enable.reference ~ power
+    power.hv ~> r_en ~> enable.line
+    enable.line ~> c_en ~> power.lv
+    enable.line ~ package.EN
+
+    boot_mode.reference ~ power
+    power.hv ~> boot_pullup ~> boot_mode.line
+    boot_mode.line ~ io[0].line
+
+    uart0.base_uart.tx.line ~ package.TXD0
+    uart0.base_uart.rx.line ~ package.RXD0
+
+    usb.usb_if.d.p.line ~ io[20].line
+    usb.usb_if.d.n.line ~ io[19].line
+
+    i2c.sda ~ io[8]
+    i2c.scl ~ io[9]
+
+    spi.mosi ~ io[11]
+    spi.miso ~ io[13]
+    spi.sclk ~ io[12]
+    spi_cs ~ io[10]
+    spi_cs.reference ~ power
+
+    io[0].line ~ package.IO0
+    io[1].line ~ package.IO1
+    io[2].line ~ package.IO2
+    io[3].line ~ package.IO3
+    io[4].line ~ package.IO4
+    io[5].line ~ package.IO5
+    io[6].line ~ package.IO6
+    io[7].line ~ package.IO7
+    io[8].line ~ package.IO8
+    io[9].line ~ package.IO9
+    io[10].line ~ package.IO10
+    io[11].line ~ package.IO11
+    io[12].line ~ package.IO12
+    io[13].line ~ package.IO13
+    io[14].line ~ package.IO14
+    io[15].line ~ package.IO15
+    io[16].line ~ package.IO16
+    io[17].line ~ package.IO17
+    io[18].line ~ package.IO18
+    io[19].line ~ package.IO19
+    io[20].line ~ package.IO20
+    io[21].line ~ package.IO21
+    # Indices 22-34 and 43-44 are intentionally not mapped here because they
+    # are not exposed as general-purpose pins on the selected WROOM-1 variant.
+    io[35].line ~ package.IO35
+    io[36].line ~ package.IO36
+    io[37].line ~ package.IO37
+    io[38].line ~ package.IO38
+    io[39].line ~ package.IO39
+    io[40].line ~ package.IO40
+    io[41].line ~ package.IO41
+    io[42].line ~ package.IO42
+    io[45].line ~ package.IO45
+    io[46].line ~ package.IO46
+    io[47].line ~ package.IO47
+    io[48].line ~ package.IO48
+
+    for logic_pin in io:
+        logic_pin.reference ~ power

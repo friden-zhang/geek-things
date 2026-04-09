@@ -1,0 +1,24 @@
+import ElectricPower
+import USB2_0
+
+from "atopile/usb-connectors/usb-connectors.ato" import USB2_0TypeCHorizontalConnector
+
+
+module UsbC5VInput:
+    """
+    Minimal USB-C sink-side 5V front-end for small development boards.
+
+    This wraps the upstream horizontal USB-C connector package so downstream
+    boards can consume a named `vbus_5v` rail and a USB 2.0 data interface
+    without re-declaring CC resistors, ESD, or the input fuse.
+    """
+
+    usb = new USB2_0
+    vbus_5v = new ElectricPower
+
+    connector = new USB2_0TypeCHorizontalConnector
+
+    assert vbus_5v.voltage within 5V +/- 5%
+
+    connector.usb ~ usb
+    vbus_5v ~ usb.usb_if.buspower

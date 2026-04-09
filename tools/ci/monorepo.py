@@ -163,7 +163,7 @@ def board_names_json(repo_root: Path) -> str:
     return json.dumps([board.name for board in discover_boards(repo_root)])
 
 
-def build_board(repo_root: Path, board_name: str) -> int:
+def build_board(repo_root: Path, board_name: str, frozen: bool = False) -> int:
     boards = {board.name: board for board in discover_boards(repo_root)}
     board = boards.get(board_name)
     if board is None:
@@ -171,14 +171,17 @@ def build_board(repo_root: Path, board_name: str) -> int:
         return 1
 
     print(f"==> ato build ({board.name})")
-    result = subprocess.run(["ato", "build"], cwd=board.path, check=False)
+    command = ["ato", "build"]
+    if frozen:
+        command.append("--frozen")
+    result = subprocess.run(command, cwd=board.path, check=False)
     return result.returncode
 
 
-def build_all_boards(repo_root: Path) -> int:
+def build_all_boards(repo_root: Path, frozen: bool = False) -> int:
     exit_code = 0
     for board in discover_boards(repo_root):
-        exit_code = max(exit_code, build_board(repo_root, board.name))
+        exit_code = max(exit_code, build_board(repo_root, board.name, frozen=frozen))
     return exit_code
 
 
@@ -189,6 +192,11 @@ def parse_args() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
         type=Path,
         default=Path(__file__).resolve().parents[2],
         help="Repository root to inspect",
+    )
+    parser.add_argument(
+        "--frozen",
+        action="store_true",
+        help="Pass `--frozen` through to `ato build` commands",
     )
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument(
@@ -232,10 +240,10 @@ def main() -> int:
         return 0
 
     if args.build_board:
-        return build_board(repo_root, args.build_board)
+        return build_board(repo_root, args.build_board, frozen=args.frozen)
 
     if args.build_all:
-        return build_all_boards(repo_root)
+        return build_all_boards(repo_root, frozen=args.frozen)
 
     parser.print_help(sys.stderr)
     return 2

@@ -1,0 +1,19 @@
+#pragma experiment("TRAITS")
+import has_datasheet
+import has_designator_prefix
+import has_part_picked
+import is_atomic_part
+
+component DIODES_AP2112K_3_3TRG1_package:
+    """AP2112K-3.3TRG1"""
+
+    trait is_atomic_part<manufacturer="DIODES", partnumber="AP2112K-3.3TRG1", footprint="SOT-25-5_L2.9-W1.6-P0.95-LS2.8-BL.kicad_mod", symbol="AP2112K-3.3TRG1.kicad_sym">
+    trait has_part_picked::by_supplier<supplier_id="lcsc", supplier_partno="C51118", manufacturer="DIODES", partno="AP2112K-3.3TRG1">
+    trait has_designator_prefix<prefix="U">
+    trait has_datasheet<datasheet="https://www.diodes.com/assets/Datasheets/AP2112.pdf">
+
+    signal GND ~ pin 1
+    signal VIN ~ pin 2
+    signal EN ~ pin 3
+    pin 4
+    signal VOUT ~ pin 5

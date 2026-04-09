@@ -1,0 +1,117 @@
+(footprint "DIODES_AP2112K_3_3TRG1:SOT-25-5_L2.9-W1.6-P0.95-LS2.8-BL"
+  (version 20241229)
+  (generator "manual")
+  (layer "F.Cu")
+  (property "Reference" "REF**"
+    (at 0 -2.6 0)
+    (layer "F.SilkS")
+    (effects
+      (font
+        (size 1 1)
+        (thickness 0.15)
+      )
+    )
+  )
+  (property "Value" "SOT-25-5_L2.9-W1.6-P0.95-LS2.8-BL"
+    (at 0 2.6 0)
+    (layer "F.Fab")
+    (effects
+      (font
+        (size 1 1)
+        (thickness 0.15)
+      )
+    )
+  )
+  (attr smd)
+  (fp_circle
+    (center -1.8 1.45)
+    (end -1.65 1.45)
+    (stroke
+      (width 0.15)
+      (type solid)
+    )
+    (fill none)
+    (layer "F.SilkS")
+  )
+  (fp_line
+    (start -1.55 0.9)
+    (end -1.55 -0.9)
+    (stroke
+      (width 0.12)
+      (type solid)
+    )
+    (layer "F.SilkS")
+  )
+  (fp_line
+    (start 1.55 0.9)
+    (end 1.55 -0.9)
+    (stroke
+      (width 0.12)
+      (type solid)
+    )
+    (layer "F.SilkS")
+  )
+  (fp_line
+    (start -0.7 0.9)
+    (end 0.7 0.9)
+    (stroke
+      (width 0.12)
+      (type solid)
+    )
+    (layer "F.SilkS")
+  )
+  (fp_line
+    (start -0.7 -0.9)
+    (end 0.7 -0.9)
+    (stroke
+      (width 0.12)
+      (type solid)
+    )
+    (layer "F.SilkS")
+  )
+  (fp_rect
+    (start -1.55 0.9)
+    (end 1.55 -0.9)
+    (stroke
+      (width 0.05)
+      (type solid)
+    )
+    (fill none)
+    (layer "F.Fab")
+  )
+  (fp_text user "%R"
+    (at 0 0 0)
+    (layer "F.Fab")
+    (effects
+      (font
+        (size 0.8 0.8)
+        (thickness 0.1)
+      )
+    )
+  )
+  (pad "1" smd rect
+    (at -0.95 1.15 0)
+    (size 0.6 1.05)
+    (layers "F.Cu" "F.Paste" "F.Mask")
+  )
+  (pad "2" smd rect
+    (at 0 1.15 0)
+    (size 0.6 1.05)
+    (layers "F.Cu" "F.Paste" "F.Mask")
+  )
+  (pad "3" smd rect
+    (at 0.95 1.15 0)
+    (size 0.6 1.05)
+    (layers "F.Cu" "F.Paste" "F.Mask")
+  )
+  (pad "4" smd rect
+    (at 0.95 -1.15 0)
+    (size 0.6 1.05)
+    (layers "F.Cu" "F.Paste" "F.Mask")
+  )
+  (pad "5" smd rect
+    (at -0.95 -1.15 0)
+    (size 0.6 1.05)
+    (layers "F.Cu" "F.Paste" "F.Mask")
+  )
+)

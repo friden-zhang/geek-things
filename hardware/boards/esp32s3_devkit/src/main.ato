@@ -1,0 +1,30 @@
+"""esp32s3_devkit - ESP32-S3 USB-C development board"""
+
+import ElectricPower
+
+from "../../../packages/common/esp32s3_devkit_io.ato" import Esp32S3DevkitIo
+from "../../../packages/common/esp32s3_module_core.ato" import Esp32S3ModuleCore
+from "../../../packages/power/ap2112k_3v3_ldo.ato" import Ap2112K3V3Ldo
+from "../../../packages/power/usb_c_5v_input.ato" import UsbC5VInput
+
+
+module App:
+    usb_input = new UsbC5VInput
+    regulator = new Ap2112K3V3Ldo
+    power_3v3 = new ElectricPower
+
+    core = new Esp32S3ModuleCore
+    devkit_io = new Esp32S3DevkitIo
+
+    usb_input.vbus_5v ~ regulator.power_in
+    regulator.power_out ~ power_3v3
+
+    power_3v3 ~ core.power
+    power_3v3 ~ devkit_io.power
+
+    usb_input.usb ~ core.usb
+
+    core.boot_mode ~ devkit_io.boot_mode
+    core.enable ~ devkit_io.enable
+    core.io[47] ~ devkit_io.user_button
+    core.io[48] ~ devkit_io.status_rgb_data

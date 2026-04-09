@@ -4,9 +4,14 @@ manufacturing/
 
 # KiCad
 fp*cache
+fp-lib-table
+
+# Local picked parts
+hardware/boards/*/src/parts/
 
 # Dependencies
 .ato/
+.venv/
 
 # Python
 __pycache__/

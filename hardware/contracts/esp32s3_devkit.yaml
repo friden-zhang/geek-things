@@ -1,0 +1,69 @@
+board: esp32s3_devkit
+version-source: VERSION
+hardware-project: hardware/boards/esp32s3_devkit
+firmware-target: firmware/boards/esp32s3_devkit
+software-tools:
+  - software/tools
+interfaces:
+  usb:
+    type: usb2_0
+    connector: usb_c
+    role: device
+    power-rail: vbus_5v
+    gpio-map:
+      d_minus: 19
+      d_plus: 20
+  i2c:
+    type: i2c
+    role: default-header-bus
+    gpio-map:
+      sda: 8
+      scl: 9
+  spi:
+    type: spi
+    role: default-header-bus
+    gpio-map:
+      cs: 10
+      mosi: 11
+      sclk: 12
+      miso: 13
+  uart0:
+    type: uart
+    role: console-and-bringup
+    notes:
+      - Exposed through the ESP32-S3 core `uart0` interface for firmware use.
+  power:
+    input: vbus_5v
+    regulated-rail: 3v3
+    notes:
+      - USB-C sink front-end behavior is delegated to the upstream `atopile/usb-connectors` package wrapped by `usb_c_5v_input`.
+      - Board-level AP2112K-3.3TRG1 LDO derives 3.3V logic power from VBUS.
+occupied-gpios:
+  boot_mode: 0
+  usb_d_minus: 19
+  usb_d_plus: 20
+  user_button: 47
+  status_rgb_data: 48
+controls:
+  boot_button:
+    action: pull_gpio_low
+    gpio: 0
+    description: Hold low during reset to enter ROM boot mode.
+  reset_button:
+    action: pull_enable_low
+    signal: EN
+  user_button:
+    action: pull_gpio_low
+    gpio: 47
+leds:
+  status_rgb:
+    type: ws2812b_2020
+    data-gpio: 48
+    power-rail: 3v3
+breakout:
+  notes:
+    - Dual-row 2.54mm devkit-style headers are the intended external form factor.
+    - Contracted default buses should remain stable even if future header pin ordering changes.
+artifacts:
+  build-dir: hardware/boards/esp32s3_devkit/build
+  manufacturing-dir: hardware/boards/esp32s3_devkit/manufacturing
