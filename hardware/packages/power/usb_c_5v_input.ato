@@ -16,9 +16,14 @@ module UsbC5VInput:
     usb = new USB2_0
     vbus_5v = new ElectricPower
 
+    # Reuse the upstream connector block so USB-C sink behavior stays centralized.
+    # Conceptually this module just renames the useful connector outputs:
+    # USB-C receptacle -- D+/D- --> usb
+    # USB-C receptacle -- VBUS --> vbus_5v
     connector = new USB2_0TypeCHorizontalConnector
 
     assert vbus_5v.voltage within 5V +/- 5%
 
+    # Expose the connector's bus power as an explicitly named board rail.
     connector.usb ~ usb
     vbus_5v ~ usb.usb_if.buspower

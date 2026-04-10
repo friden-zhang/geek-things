@@ -23,10 +23,14 @@ module Esp32S3ModuleCore:
 
     package = new Espressif_Systems_ESP32_S3_WROOM_1_N16R8_package
 
+    # These are the board-facing interfaces that higher-level designs connect to.
     power = new ElectricPower
     power.required = True
     assert power.voltage within 3V to 3.6V
 
+    # `boot_mode` / `enable` are logic interfaces, not switches.
+    # - `.line` is the actual electrical net that gets wired to pins and passives.
+    # - `.reference` says that net is interpreted inside this 3V3/GND logic domain.
     enable = new ElectricLogic
     boot_mode = new ElectricLogic
     io = new ElectricLogic[49]
@@ -37,6 +41,8 @@ module Esp32S3ModuleCore:
     spi_cs = new ElectricLogic
     uart0 = new UART
 
+    # Keep the module's local support parts inside the core so every board starts from
+    # a known-good ESP32-S3 power-up and boot configuration.
     c_bulk = new Capacitor
     c_bulk.capacitance = 10uF +/- 20%
     c_bulk.package = "0805"
@@ -60,33 +66,93 @@ module Esp32S3ModuleCore:
     package.P3V3 ~ power.hv
     package.GND ~ power.lv
 
+    # Local decoupling stays next to the module instead of being repeated by each board.
+    # Equivalent rail fragment:
+    # 3V3 ----+------------------ ESP32 P3V3
+    #         |
+    #         +-- c_bulk ------- GND
+    #         |
+    #         +-- c_decoupling - GND
+    #
+    # Both capacitors are in parallel across the rail: the larger cap helps with slower
+    # current swings, while the smaller cap is a faster local bypass for high-frequency
+    # switching noise close to the module.
     power.hv ~> c_bulk ~> power.lv
     power.hv ~> c_decoupling ~> power.lv
 
+    # EN idles high through RC timing so the module resets cleanly on power-up.
+    # Equivalent EN net inside this module:
+    # 3V3 --- r_en ---+--- EN (ESP32)
+    #                 |
+    #                c_en
+    #                 |
+    #                GND
+    #
+    # Higher-level boards can also connect a RESET switch to the same `enable.line`
+    # node to force EN low for a manual reset pulse.
     enable.reference ~ power
     power.hv ~> r_en ~> enable.line
     enable.line ~> c_en ~> power.lv
     enable.line ~ package.EN
 
+    # BOOT is also active-low, so the default state is pulled high until a button overrides it.
+    # Equivalent BOOT strap:
+    # 3V3 --- boot_pullup ---+--- IO0 (ESP32)
+    #                        |
+    #                   boot_mode.line
+    #                        |
+    #                 external BOOT switch
+    #                        |
+    #                       GND
+    #
+    # `boot_mode.line` is the shared BOOT net. This module provides the default pull-up;
+    # higher-level I/O packages add the momentary switch that can pull the same node low.
     boot_mode.reference ~ power
     power.hv ~> boot_pullup ~> boot_mode.line
     boot_mode.line ~ io[0].line
 
+    # Give the rest of the repo stable "default dev board" bus aliases.
+    # UART0 path:
+    # uart0.tx ----------> TXD0 (ESP32)
+    # uart0.rx <---------- RXD0 (ESP32)
+    #
+    # This is the classic programming / debug UART exposed by Espressif modules.
     uart0.base_uart.tx.line ~ package.TXD0
     uart0.base_uart.rx.line ~ package.RXD0
 
+    # Native USB path:
+    # USB D+ ---- core.usb.d.p ---- IO20 ---- internal ESP32 USB peripheral
+    # USB D- ---- core.usb.d.n ---- IO19 ---- internal ESP32 USB peripheral
+    #
+    # Higher-level boards connect a connector to `core.usb`; this module pins that
+    # abstract USB interface to the fixed GPIOs used by the selected ESP32-S3 module.
     usb.usb_if.d.p.line ~ io[20].line
     usb.usb_if.d.n.line ~ io[19].line
 
+    # Default I2C breakout:
+    # i2c.sda ---- IO8  ---- ESP32 GPIO8
+    # i2c.scl ---- IO9  ---- ESP32 GPIO9
+    #
+    # This is just a board convention alias; firmware could remap I2C in software, but
+    # the repo uses these names so add-on hardware sees a stable default header mapping.
     i2c.sda ~ io[8]
     i2c.scl ~ io[9]
 
+    # Default SPI breakout:
+    # spi.mosi ---- IO11 ---- ESP32 GPIO11
+    # spi.miso ---- IO13 ---- ESP32 GPIO13
+    # spi.sclk ---- IO12 ---- ESP32 GPIO12
+    # spi_cs   ---- IO10 ---- ESP32 GPIO10
+    #
+    # `spi` carries the shared bus wires; `spi_cs` stays separate because chip-select is
+    # usually one-per-device rather than a permanent part of the bus bundle itself.
     spi.mosi ~ io[11]
     spi.miso ~ io[13]
     spi.sclk ~ io[12]
     spi_cs ~ io[10]
     spi_cs.reference ~ power
 
+    # Export only the GPIOs that this WROOM-1 variant actually exposes.
     io[0].line ~ package.IO0
     io[1].line ~ package.IO1
     io[2].line ~ package.IO2
@@ -124,5 +190,6 @@ module Esp32S3ModuleCore:
     io[47].line ~ package.IO47
     io[48].line ~ package.IO48
 
+    # Every logic signal in this block lives in the same 3V3 domain.
     for logic_pin in io:
         logic_pin.reference ~ power

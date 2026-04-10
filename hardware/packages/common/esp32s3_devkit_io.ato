@@ -16,6 +16,7 @@ module Esp32S3DevkitIo:
     application code, and a compact addressable RGB status LED.
     """
 
+    # The top-level board decides which GPIOs drive these interfaces.
     power = new ElectricPower
     assert power.voltage within 3V to 3.6V
 
@@ -38,11 +39,27 @@ module Esp32S3DevkitIo:
     user_button.reference ~ power
     status_rgb_data.reference ~ power
 
+    # BOOT and RESET are both active-low momentary pulls to ground.
+    # These switches do not create new signals; they operate on the shared nets exported
+    # by the core package:
+    # core.boot_mode.line --- boot_switch ---- GND
+    # core.enable.line ------ reset_switch --- GND
     boot_mode.line ~> boot_switch ~> power.lv
     enable.line ~> reset_switch ~> power.lv
 
+    # USER defaults high so firmware can read a clean low level when the button is pressed.
+    # Equivalent USER button net:
+    # 3V3 --- user_pullup ---+--- user_button.line --- GPIO on the MCU
+    #                        |
+    #                    user_switch
+    #                        |
+    #                       GND
     power.hv ~> user_pullup ~> user_button.line
     user_button.line ~> user_switch ~> power.lv
 
+    # The LED module owns its internal LED behavior; this package just forwards rail + data.
+    # GPIO ---- status_rgb_data ---- DIN (WS2812)
+    # 3V3 ------------------------- VDD
+    # GND ------------------------- GND
     power ~ rgb_led.power
     status_rgb_data ~ rgb_led.data_in

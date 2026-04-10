@@ -9,6 +9,13 @@ from "../../../packages/power/usb_c_5v_input.ato" import UsbC5VInput
 
 
 module App:
+    # The board layer only composes reusable blocks and chooses the shared rails.
+    # Board-level block diagram:
+    # USB-C VBUS -> LDO -> 3V3 -> core + devkit_io
+    # USB D+/D- -----------> core
+    # BOOT / RESET --------> shared control nets on the core
+    # GPIO47 --------------> user_button
+    # GPIO48 --------------> status_rgb_data
     usb_input = new UsbC5VInput
     regulator = new Ap2112K3V3Ldo
     power_3v3 = new ElectricPower
@@ -16,14 +23,18 @@ module App:
     core = new Esp32S3ModuleCore
     devkit_io = new Esp32S3DevkitIo
 
+    # Convert USB VBUS into the board's internal 3V3 rail once, then fan it out.
     usb_input.vbus_5v ~ regulator.power_in
     regulator.power_out ~ power_3v3
 
     power_3v3 ~ core.power
     power_3v3 ~ devkit_io.power
 
+    # End-to-end USB data path:
+    # USB-C receptacle D+/D- -> usb_input.usb -> core.usb -> IO20/IO19 -> ESP32-S3 USB
     usb_input.usb ~ core.usb
 
+    # Keep board-specific GPIO ownership here so the shared I/O package stays reusable.
     core.boot_mode ~ devkit_io.boot_mode
     core.enable ~ devkit_io.enable
     core.io[47] ~ devkit_io.user_button

@@ -15,6 +15,7 @@ module Ap2112K3V3Ldo:
     power_in = new ElectricPower
     power_out = new ElectricPower
 
+    # Fix the concrete regulator choice here so boards can depend on a named 3V3 stage.
     regulator = new DIODES_AP2112K_3_3TRG1_package
 
     input_cap = new Capacitor
@@ -29,11 +30,19 @@ module Ap2112K3V3Ldo:
     assert power_out.voltage within 3.3V +/- 1.5%
     assert power_out.max_current <= 600mA
 
+    # This part is always enabled; board-level power control would live outside this module.
     regulator.GND ~ power_in.lv
     regulator.GND ~ power_out.lv
     regulator.VIN ~ power_in.hv
     regulator.VOUT ~ power_out.hv
     regulator.EN ~ power_in.hv
 
+    # Keep the stability caps local so the regulator can be reused safely as one block.
+    # Equivalent regulator fragment:
+    # 5V in ---- VIN   AP2112   VOUT ---- 3V3 out
+    #            |                 |
+    #        input_cap         output_cap
+    #            |                 |
+    #           GND               GND
     power_in.hv ~> input_cap ~> power_in.lv
     power_out.hv ~> output_cap ~> power_out.lv
