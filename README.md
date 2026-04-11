@@ -21,6 +21,15 @@ Hardware design monorepo built around atopile.
   - `hardware/packages/common/esp32s3_module_core.ato`
   - `hardware/packages/common/esp32s3_devkit_io.ato`
 
+## Compiler Development
+
+The `atopile` compiler is vendored as a git submodule at `third_party/atopile`.
+
+```bash
+git submodule update --init --recursive
+uv sync --locked --python 3.14
+```
+
 ## Common Commands
 
 ```bash
@@ -30,6 +39,13 @@ uv run python tools/ci/monorepo.py --json-boards
 uv run python tools/ci/monorepo.py --build-board esp32s3_devkit
 uv run python tools/ci/monorepo.py --build-board esp32s3_devkit --frozen
 ```
+
+Successful `ato build` runs now produce:
+
+- `layouts/default/default.kicad_pcb`
+- `build/builds/default/default.canonical_design.json`
+
+Paths are relative to each board directory under `hardware/boards/<board>/`.
 
 Build a board directly from its project directory:
 

@@ -38,9 +38,12 @@ Firmware and software should consume the contract file or a future generated der
 
 ## CI Workflow
 
+- `third_party/atopile/` pins the compiler source used for local development and CI.
+- `hardware/boards/<board>/build/builds/default/default.canonical_design.json`
+  is the phase 1 canonical IR artifact emitted by every successful board build.
 - `tools/ci/monorepo.py --check` validates the expected repository shape.
 - `tools/ci/monorepo.py --json-boards` emits a board list for CI matrix discovery.
-- `tools/ci/monorepo.py --build-board <board>` runs `ato build` in one board directory.
+- `tools/ci/monorepo.py --build-board <board>` runs `ato build` in one board directory and fails if that build succeeds but the canonical snapshot file is missing.
 
 CI should validate structure and discover boards up front, then run per-board hardware builds in parallel after both checks succeed.
 

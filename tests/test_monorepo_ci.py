@@ -1,5 +1,6 @@
 import importlib.util
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 import yaml
@@ -55,7 +56,16 @@ def make_board(repo_root: Path, name: str) -> None:
     write_file(repo_root / "firmware" / "boards" / name / "README.md", f"# {name}\n")
 
 
-def make_shared_structure(repo_root: Path) -> None:
+def make_atopile_submodule_stub(repo_root: Path) -> None:
+    """Minimal tree matching the vendored compiler submodule layout."""
+    write_file(repo_root / "third_party" / "atopile" / "pyproject.toml", "[project]\nname = \"atopile\"\n")
+    write_file(
+        repo_root / "third_party" / "atopile" / "src" / "atopile" / "__init__.py",
+        '"""stub"""\n',
+    )
+
+
+def make_shared_structure(repo_root: Path, *, with_atopile_submodule: bool = True) -> None:
     write_file(repo_root / "VERSION", "0.1.0\n")
     write_file(repo_root / "hardware" / "packages" / "interfaces" / "README.md", "# x\n")
     write_file(repo_root / "hardware" / "packages" / "power" / "README.md", "# x\n")
@@ -64,6 +74,8 @@ def make_shared_structure(repo_root: Path) -> None:
     write_file(repo_root / "software" / "tools" / "README.md", "# tools\n")
     write_file(repo_root / "docs" / "architecture" / "monorepo.md", "# docs\n")
     write_file(repo_root / "tools" / "ci" / ".gitkeep", "")
+    if with_atopile_submodule:
+        make_atopile_submodule_stub(repo_root)
 
 
 class MonorepoCiTests(unittest.TestCase):
@@ -167,12 +179,49 @@ class MonorepoCiTests(unittest.TestCase):
         module = load_monorepo_module()
         with tempfile.TemporaryDirectory() as tmpdir:
             repo_root = Path(tmpdir)
-            make_shared_structure(repo_root)
+            make_shared_structure(repo_root, with_atopile_submodule=True)
             make_board(repo_root, "app")
 
             errors = module.validate_repo(repo_root)
 
             self.assertEqual(errors, [])
+
+    def test_validate_repo_requires_atopile_submodule_tree(self):
+        module = load_monorepo_module()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir)
+            make_shared_structure(repo_root, with_atopile_submodule=False)
+            make_board(repo_root, "app")
+
+            errors = module.validate_repo(repo_root)
+
+            self.assertTrue(
+                any("third_party/atopile" in error for error in errors),
+                msg=errors,
+            )
+
+    def test_validate_repo_requires_atopile_compiler_files(self):
+        module = load_monorepo_module()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir)
+            make_shared_structure(repo_root, with_atopile_submodule=False)
+            (repo_root / "third_party" / "atopile").mkdir(parents=True)
+            make_board(repo_root, "app")
+
+            errors = module.validate_repo(repo_root)
+
+            self.assertTrue(
+                any("third_party/atopile/pyproject.toml" in error for error in errors),
+                msg=errors,
+            )
+
+    def test_pyproject_sources_atopile_from_local_submodule(self):
+        repo_root = Path(__file__).resolve().parents[1]
+        data = tomllib.loads((repo_root / "pyproject.toml").read_text(encoding="utf-8"))
+        sources = data.get("tool", {}).get("uv", {}).get("sources", {})
+        self.assertIn("atopile", sources)
+        self.assertEqual(sources["atopile"].get("path"), "third_party/atopile")
+        self.assertTrue(sources["atopile"].get("editable") is True)
 
     def test_validate_repo_reports_missing_manifest_entry_file(self):
         module = load_monorepo_module()
@@ -238,10 +287,24 @@ class MonorepoCiTests(unittest.TestCase):
             repo_root = Path(tmpdir)
             make_shared_structure(repo_root)
             make_board(repo_root, "esp32s3_devkit")
+            build_dir = (
+                repo_root
+                / "hardware"
+                / "boards"
+                / "esp32s3_devkit"
+                / "build"
+                / "builds"
+                / "default"
+            )
             calls: list[tuple[list[str], Path, bool]] = []
 
             def fake_run(cmd, cwd, check):
                 calls.append((cmd, cwd, check))
+                build_dir.mkdir(parents=True, exist_ok=True)
+                (build_dir / "default.canonical_design.json").write_text(
+                    '{"schema_version":"v1","identity_version":"v1"}',
+                    encoding="utf-8",
+                )
 
                 class Result:
                     returncode = 0
@@ -266,6 +329,67 @@ class MonorepoCiTests(unittest.TestCase):
                     )
                 ],
             )
+
+    def test_build_board_requires_canonical_design_artifact(self):
+        module = load_monorepo_module()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir)
+            make_shared_structure(repo_root)
+            make_board(repo_root, "esp32s3_devkit")
+            build_dir = (
+                repo_root
+                / "hardware"
+                / "boards"
+                / "esp32s3_devkit"
+                / "build"
+                / "builds"
+                / "default"
+            )
+            calls: list[tuple[list[str], Path, bool]] = []
+
+            def fake_run(cmd, cwd, check):
+                calls.append((cmd, cwd, check))
+                build_dir.mkdir(parents=True, exist_ok=True)
+                (build_dir / "default.canonical_design.json").write_text(
+                    '{"schema_version":"v1","identity_version":"v1"}',
+                    encoding="utf-8",
+                )
+
+                class Result:
+                    returncode = 0
+
+                return Result()
+
+            original_run = module.subprocess.run
+            module.subprocess.run = fake_run
+            try:
+                exit_code = module.build_board(repo_root, "esp32s3_devkit", frozen=False)
+            finally:
+                module.subprocess.run = original_run
+
+            self.assertEqual(exit_code, 0)
+
+    def test_build_board_fails_if_canonical_design_artifact_is_missing(self):
+        module = load_monorepo_module()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo_root = Path(tmpdir)
+            make_shared_structure(repo_root)
+            make_board(repo_root, "esp32s3_devkit")
+
+            def fake_run(cmd, cwd, check):
+                class Result:
+                    returncode = 0
+
+                return Result()
+
+            original_run = module.subprocess.run
+            module.subprocess.run = fake_run
+            try:
+                exit_code = module.build_board(repo_root, "esp32s3_devkit", frozen=False)
+            finally:
+                module.subprocess.run = original_run
+
+            self.assertEqual(exit_code, 1)
 
 
 if __name__ == "__main__":

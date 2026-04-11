@@ -115,6 +115,17 @@ def validate_repo(repo_root: Path) -> list[str]:
         if not path.is_dir():
             errors.append(f"Missing required directory: {path.relative_to(repo_root)}")
 
+    atopile_root = repo_root / "third_party" / "atopile"
+    if not atopile_root.is_dir():
+        errors.append(f"Missing required directory: {atopile_root.relative_to(repo_root)}")
+    else:
+        for rel in ("pyproject.toml", "src/atopile/__init__.py"):
+            path = atopile_root / rel
+            if not path.is_file():
+                errors.append(
+                    f"Missing required atopile path: {path.relative_to(repo_root)}"
+                )
+
     version_file = repo_root / "VERSION"
     if not version_file.is_file():
         errors.append("Missing required file: VERSION")
@@ -163,6 +174,16 @@ def board_names_json(repo_root: Path) -> str:
     return json.dumps([board.name for board in discover_boards(repo_root)])
 
 
+def canonical_design_artifact(board: Board) -> Path:
+    return (
+        board.path
+        / "build"
+        / "builds"
+        / "default"
+        / "default.canonical_design.json"
+    )
+
+
 def build_board(repo_root: Path, board_name: str, frozen: bool = False) -> int:
     boards = {board.name: board for board in discover_boards(repo_root)}
     board = boards.get(board_name)
@@ -175,7 +196,18 @@ def build_board(repo_root: Path, board_name: str, frozen: bool = False) -> int:
     if frozen:
         command.append("--frozen")
     result = subprocess.run(command, cwd=board.path, check=False)
-    return result.returncode
+    if result.returncode != 0:
+        return result.returncode
+
+    artifact = canonical_design_artifact(board)
+    if not artifact.is_file():
+        print(
+            f"Missing canonical design artifact: {artifact.relative_to(repo_root)}",
+            file=sys.stderr,
+        )
+        return 1
+
+    return 0
 
 
 def build_all_boards(repo_root: Path, frozen: bool = False) -> int:
