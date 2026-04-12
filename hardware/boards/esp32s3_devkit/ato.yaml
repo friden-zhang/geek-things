@@ -3,6 +3,7 @@ requires-atopile: ^0.15.3
 paths:
   src: ./src
   layout: ./layouts
+  hardware-contract: ../../contracts/esp32s3_devkit.yaml
 
 builds:
   default:

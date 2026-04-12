@@ -1,6 +1,14 @@
 board: esp32s3_devkit
 version-source: VERSION
 hardware-project: hardware/boards/esp32s3_devkit
+# Used by atopile canonical IR / EasyEDA Pro export until layout emits outline from geometry.
+layout:
+  board_outline_mm:
+    - [0.0, 0.0]
+    - [55.0, 0.0]
+    - [55.0, 28.0]
+    - [0.0, 28.0]
+    - [0.0, 0.0]
 firmware-target: firmware/boards/esp32s3_devkit
 software-tools:
   - software/tools
