@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://geek-things.local/hardware/schemas/easyeda_pro_import_manifest.schema.json",
+  "title": "EasyEDA Pro import manifest (atopile → extension)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "title",
+    "root_module",
+    "nets",
+    "instances"
+  ],
+  "properties": {
+    "manifest_version": {
+      "type": "string",
+      "const": "1",
+      "description": "Increment when breaking the shape of this file."
+    },
+    "title": {
+      "type": "string",
+      "description": "Human / project display name (matches EasyEDA Pro bundle meta)."
+    },
+    "root_module": {
+      "type": "string",
+      "description": "atopile root module id for the exported design."
+    },
+    "generator": {
+      "type": "string",
+      "description": "Producer name.",
+      "default": "atopile"
+    },
+    "generator_version": {
+      "type": "string",
+      "description": "atopile package version when available."
+    },
+    "nets": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Logical net names (same order as canonical design export)."
+    },
+    "board_outline_mm": {
+      "type": "array",
+      "description": "Closed polygon outline in mm; omitted or empty if unknown.",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": { "type": "number" }
+      }
+    },
+    "instances": {
+      "type": "array",
+      "description": "Only instances with a non-empty LCSC id (same order as offline .esch / .epcb placement).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "export_index",
+          "canonical_id",
+          "semantic_path",
+          "designator",
+          "lcsc_id",
+          "schematic",
+          "pcb"
+        ],
+        "properties": {
+          "export_index": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "0-based index among LCSC instances; matches atopile bundle placement grid."
+          },
+          "canonical_id": { "type": "string" },
+          "semantic_path": { "type": "string" },
+          "designator": { "type": "string" },
+          "lcsc_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "LCSC part number (typically C + digits, e.g. C21190)."
+          },
+          "manufacturer": { "type": "string" },
+          "mpn": { "type": "string" },
+          "supplier_partno": { "type": "string" },
+          "footprint_name_hint": { "type": "string" },
+          "pad_nets": {
+            "type": "array",
+            "description": "Pad number → logical net name.",
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": { "type": "string" }
+            }
+          },
+          "schematic": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["coord_system", "x", "y"],
+            "properties": {
+              "coord_system": {
+                "type": "string",
+                "const": "easyeda_pro_native",
+                "description": "Integer canvas coordinates matching the offline .esch COMPONENT x,y."
+              },
+              "x": { "type": "integer" },
+              "y": { "type": "integer" }
+            }
+          },
+          "pcb": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["anchor_mm", "rotation_deg"],
+            "properties": {
+              "anchor_mm": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["x", "y"],
+                "properties": {
+                  "x": { "type": "number" },
+                  "y": { "type": "number" }
+                },
+                "description": "Footprint anchor in mm (same grid as offline .epcb COMPONENT)."
+              },
+              "rotation_deg": { "type": "number" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
